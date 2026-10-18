@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KI-Dokumentenassistent</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 960px; margin: 2rem auto; padding: 0 1rem; color: #1f2933; }
+    h1 { font-size: 1.5rem; }
+    section { border: 1px solid #d9e2ec; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+    label { display: block; margin: .5rem 0 .25rem; font-weight: 600; }
+    input, select, button { font: inherit; padding: .4rem .6rem; }
+    input[type=text] { width: 100%; box-sizing: border-box; }
+    button { background: #1d4ed8; color: #fff; border: 0; border-radius: 4px; cursor: pointer; margin-top: .5rem; }
+    table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    th, td { text-align: left; border-bottom: 1px solid #e4e7eb; padding: .4rem; vertical-align: top; }
+    .ok { color: #047857; } .missing { color: #b91c1c; }
+    pre { white-space: pre-wrap; background: #f5f7fa; padding: .75rem; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>KI-Dokumentenassistent für Verwaltungsakten</h1>
+
+  <section>
+    <label for="caseId">Akten-ID</label>
+    <input id="caseId" type="text" value="AKTE-2026-001">
+  </section>
+
+  <section>
+    <h2>1. Dokument hochladen</h2>
+    <input id="file" type="file" accept=".pdf,.txt,.md">
+    <button onclick="upload()">Hochladen und analysieren</button>
+    <table id="docs"><thead><tr><th>Datei</th><th>Typ</th><th>Sicherheit</th><th>Datum</th><th>Aktenzeichen</th><th>Betrag</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <section>
+    <h2>2. Frage zur Akte stellen</h2>
+    <input id="question" type="text" placeholder="z. B. Bis wann ist die Rechnung zu zahlen?">
+    <button onclick="ask()">Fragen</button>
+    <pre id="answer"></pre>
+  </section>
+
+  <section>
+    <h2>3. Vollständigkeit prüfen</h2>
+    <select id="caseType"></select>
+    <button onclick="check()">Prüfen</button>
+    <div id="completeness"></div>
+  </section>
+
+<script>
+  const caseId = () => encodeURIComponent(document.getElementById('caseId').value.trim());
+  const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  async function loadDocs() {
+    const res = await fetch(`/api/cases/${caseId()}/documents`);
+    const docs = await res.json();
+    document.querySelector('#docs tbody').innerHTML = docs.map(d => `<tr>
+      <td>${escapeHtml(d.fileName)}</td><td>${escapeHtml(d.type)}</td><td>${Math.round(d.confidence * 100)} %</td>
+      <td>${escapeHtml(d.metadata.datum)}</td><td>${escapeHtml(d.metadata.aktenzeichen)}</td><td>${escapeHtml(d.metadata.betrag)}</td></tr>`).join('');
+  }
+
+  async function upload() {
+    const file = document.getElementById('file').files[0];
+    if (!file) return alert('Bitte eine Datei wählen.');
+    const form = new FormData();
+    form.append('file', file);
+    const res = await fetch(`/api/cases/${caseId()}/documents`, { method: 'POST', body: form });
+    if (!res.ok) return alert((await res.json()).error ?? 'Fehler beim Hochladen');
+    await loadDocs();
+  }
+
+  async function ask() {
+    const question = document.getElementById('question').value;
+    const res = await fetch('/api/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, caseId: decodeURIComponent(caseId()) }) });
+    const data = await res.json();
+    if (!res.ok) return alert(data.error);
+    const sources = data.sources.map((s, i) => `[${i + 1}] ${s.fileName} (Ähnlichkeit ${s.score})`).join('\n');
+    document.getElementById('answer').textContent = `${data.text}\n\nQuellen:\n${sources}`;
+  }
+
+  async function check() {
+    const type = document.getElementById('caseType').value;
+    const res = await fetch(`/api/cases/${caseId()}/completeness?caseType=${encodeURIComponent(type)}`);
+    const r = await res.json();
+    document.getElementById('completeness').innerHTML = r.isComplete
+      ? '<p class="ok">Die Akte ist vollständig.</p>'
+      : `<p class="missing">Es fehlen: ${r.missing.map(escapeHtml).join(', ')}</p>`;
+  }
+
+  (async () => {
+    const types = await (await fetch('/api/case-types')).json();
+    document.getElementById('caseType').innerHTML = types.map(t => `<option>${escapeHtml(t)}</option>`).join('');
+    await loadDocs();
+  })();
+</script>
+</body>
+</html>
