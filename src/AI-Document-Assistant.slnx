@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="../tests/DocumentAssistant.Tests/DocumentAssistant.Tests.csproj" />
+  <Project Path="DocumentAssistant.Api/DocumentAssistant.Api.csproj" />
+  <Project Path="DocumentAssistant.Core/DocumentAssistant.Core.csproj" />
+</Solution>

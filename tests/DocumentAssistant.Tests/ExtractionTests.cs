@@ -1,4 +1,5 @@
 using DocumentAssistant.Core.Extraction;
+using Xunit;
 
 namespace DocumentAssistant.Tests;
 

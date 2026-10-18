@@ -1,6 +1,7 @@
 using DocumentAssistant.Core.Llm;
 using DocumentAssistant.Core.Models;
 using DocumentAssistant.Core.Retrieval;
+using Xunit;
 
 namespace DocumentAssistant.Tests;
 

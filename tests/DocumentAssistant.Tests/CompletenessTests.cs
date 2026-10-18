@@ -1,5 +1,6 @@
 using DocumentAssistant.Core.Completeness;
 using DocumentAssistant.Core.Models;
+using Xunit;
 
 namespace DocumentAssistant.Tests;
 

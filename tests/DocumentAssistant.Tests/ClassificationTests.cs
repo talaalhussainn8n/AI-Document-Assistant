@@ -1,6 +1,7 @@
 using DocumentAssistant.Core.Classification;
 using DocumentAssistant.Core.Llm;
 using DocumentAssistant.Core.Models;
+using Xunit;
 
 namespace DocumentAssistant.Tests;
 
