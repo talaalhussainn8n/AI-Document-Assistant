@@ -18,10 +18,10 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Abhängigkeiten wiederherstellen
-        run: dotnet restore src\DocumentAssistant.Api\DocumentAssistant.Api.csproj
+        run: dotnet restore src/DocumentAssistant.Api/DocumentAssistant.Api.csproj
 
-      - name: Abhängigkeiten wiederherstellen
-        run: dotnet build src\DocumentAssistant.Api\DocumentAssistant.Api.csproj --no-restore --configuration Release
+      - name: Abhängigkeiten erstellen
+        run: dotnet build src/DocumentAssistant.Api/DocumentAssistant.Api.csproj --no-restore --configuration Release
   test:
     runs-on: ubuntu-latest
     steps:
@@ -33,4 +33,4 @@ jobs:
           dotnet-version: 8.0.x
           
       - name: Tests ausführen
-        run: dotnet test tests/DocumentAssistant.Tests/DocumentAssistant.Tests.csproj --no-build --configuration Release
+        run: dotnet test tests/DocumentAssistant.Tests/DocumentAssistant.Tests.csproj --configuration Release
